@@ -16,6 +16,12 @@ class Subcategory(BaseModel):
     subcategory = models.ForeignKey(
         "self", on_delete=models.CASCADE, related_name="child_subcategories", blank=True, null=True, verbose_name="Parent Subcategory"
     )
+    thumbnail = models.ImageField(
+        upload_to="subcategories/thumbnails/",
+        blank=True,
+        null=True,
+        verbose_name="Thumbnail"
+    )
 
     class Meta:
         verbose_name = "Subcategory"

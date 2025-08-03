@@ -9,6 +9,12 @@ class Category(BaseModel):
 
     name = models.CharField(max_length=100, unique=True, verbose_name="Category Name")
     description = models.TextField(blank=True, null=True, verbose_name="Description", default="")
+    thumbnail = models.ImageField(
+        upload_to="categories/thumbnails/",
+        blank=True,
+        null=True,
+        verbose_name="Thumbnail"
+    )
 
     class Meta:
         verbose_name = "Category"
