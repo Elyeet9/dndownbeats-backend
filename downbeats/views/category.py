@@ -66,6 +66,6 @@ class CategoryCreateView(APIView):
         serializer = CategoryCreateSerializer(data=request.data)
         if serializer.is_valid():
             category = serializer.save()
-            return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
+            return Response({"id": category.id, "name": category.name}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

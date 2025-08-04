@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from downbeats.models.category import Category
 from downbeats.models.subcategory import Subcategory
-from downbeats.serializers.subcategory import SubcategoryCreateSerializer
 
 
 class SubcategoryDetailView(APIView):
@@ -60,8 +60,28 @@ class SubcategoryCreateView(APIView):
     """
 
     def post(self, request, *args, **kwargs):
-        serializer = SubcategoryCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            subcategory = serializer.save()
+        data = request.data.copy()
+        # Get all required fields from the request data
+        request_name = data['name']
+        request_description = data.get('description', '')
+        request_category = data.get('category')
+        category = Category.objects.filter(pk=request_category).first()
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the optional fields
+        request_subcategory = data.get('subcategory', None)
+        request_thumbnail = data.get('thumbnail', None)
+
+        # Try to create the subcategory
+        try:
+            subcategory = Subcategory.objects.create(
+                name=request_name,
+                description=request_description,
+                category=category,
+                subcategory=request_subcategory,
+                thumbnail=request_thumbnail
+            )
             return Response({"id": subcategory.id, "name": subcategory.name}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
