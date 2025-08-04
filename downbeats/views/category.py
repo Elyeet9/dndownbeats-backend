@@ -25,11 +25,10 @@ class CategoryDetailView(APIView):
     def get(self, request, pk, *args, **kwargs):
         try:
             category = Category.objects.get(pk=pk)
-            # Get related subcategories
-            subcategories = category.subcategories.all()
+            # Get related top-level subcategories
+            subcategories = category.subcategories.filter(subcategory__isnull=True)
             # Get all top-level soundtracks in the category
-            soundtracks = category.soundtracks.all()
-            soundtracks = soundtracks.filter(subcategory__isnull=True)
+            soundtracks = category.soundtracks.filter(subcategory__isnull=True)
             response = {
                 'id': category.id,
                 'name': category.name,
