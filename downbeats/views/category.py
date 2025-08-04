@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from downbeats.models.category import Category
-from downbeats.serializers.category import CategorySerializer
+from downbeats.serializers.category import CategorySerializer, CategoryCreateSerializer
 
 
 class CategoryListView(APIView):
@@ -55,3 +55,17 @@ class CategoryDetailView(APIView):
             return Response(response, status=status.HTTP_200_OK)
         except Category.DoesNotExist:
             return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class CategoryCreateView(APIView):
+    """
+    View to create a new category.
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            category = serializer.save()
+            return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
