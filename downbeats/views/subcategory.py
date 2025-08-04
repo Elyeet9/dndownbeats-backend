@@ -71,6 +71,7 @@ class SubcategoryCreateView(APIView):
 
         # Get the optional fields
         request_subcategory = data.get('subcategory', None)
+        subcategory = Subcategory.objects.filter(pk=request_subcategory).first() if request_subcategory else None
         request_thumbnail = data.get('thumbnail', None)
 
         # Try to create the subcategory
@@ -79,7 +80,7 @@ class SubcategoryCreateView(APIView):
                 name=request_name,
                 description=request_description,
                 category=category,
-                subcategory=request_subcategory,
+                subcategory=subcategory,
                 thumbnail=request_thumbnail
             )
             return Response({"id": subcategory.id, "name": subcategory.name}, status=status.HTTP_201_CREATED)
