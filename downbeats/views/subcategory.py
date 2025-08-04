@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from downbeats.models.subcategory import Subcategory
+from downbeats.serializers.subcategory import SubcategoryCreateSerializer
 
 
 class SubcategoryDetailView(APIView):
@@ -51,3 +52,16 @@ class SubcategoryDetailView(APIView):
             return Response(response, status=status.HTTP_200_OK)
         except Subcategory.DoesNotExist:
             return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class SubcategoryCreateView(APIView):
+    """
+    View to create a new subcategory.
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = SubcategoryCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            subcategory = serializer.save()
+            return Response({"id": subcategory.id, "name": subcategory.name}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

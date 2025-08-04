@@ -63,7 +63,7 @@ class CategoryCreateView(APIView):
     """
 
     def post(self, request, *args, **kwargs):
-        serializer = CategorySerializer(data=request.data)
+        serializer = CategoryCreateSerializer(data=request.data)
         if serializer.is_valid():
             category = serializer.save()
             return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
