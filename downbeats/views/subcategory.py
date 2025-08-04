@@ -53,6 +53,21 @@ class SubcategoryDetailView(APIView):
         except Subcategory.DoesNotExist:
             return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
         
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            subcategory = Subcategory.objects.get(pk=pk)
+            data = request.data.copy()
+            subcategory.name = data.get('name', subcategory.name)
+            subcategory.description = data.get('description', subcategory.description)
+            subcategory.thumbnail = data.get('thumbnail', subcategory.thumbnail)
+
+            subcategory.save()
+            return Response({"id": subcategory.id, "name": subcategory.name}, status=status.HTTP_200_OK)
+        except Subcategory.DoesNotExist:
+            return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class SubcategoryCreateView(APIView):
     """
@@ -86,3 +101,32 @@ class SubcategoryCreateView(APIView):
             return Response({"id": subcategory.id, "name": subcategory.name}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class SubcategoryDeleteView(APIView):
+    """
+    View to delete a subcategory by ID.
+    """
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            subcategory = Subcategory.objects.get(pk=pk)
+            child_subcategories_count = subcategory.child_subcategories.count()
+            soundtracks_count = subcategory.soundtracks.count()
+            return Response({
+                "child_subcategories_count": child_subcategories_count,
+                "soundtracks_count": soundtracks_count
+            }, status=status.HTTP_200_OK)
+        except Subcategory.DoesNotExist:
+            return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            subcategory = Subcategory.objects.get(pk=pk)
+            subcategory.delete()
+            return Response({"message": "Subcategory deleted successfully"}, status=status.HTTP_200_OK)
+        except Subcategory.DoesNotExist:
+            return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        

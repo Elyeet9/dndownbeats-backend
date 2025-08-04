@@ -8,6 +8,26 @@ from downbeats.models.subcategory import Subcategory
 from downbeats.models.soundtrack import Soundtrack
 
 
+class SoundtrackDetailView(APIView):
+    """
+    View to retrieve a single soundtrack by ID.
+    """
+
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            soundtrack = Soundtrack.objects.get(pk=pk)
+            data = request.data.copy()
+            soundtrack.title = data.get('title', soundtrack.title)
+            soundtrack.description = data.get('description', soundtrack.description)
+            soundtrack.thumbnail = data.get('thumbnail', soundtrack.thumbnail)
+            soundtrack.url = data.get('url', soundtrack.url)
+
+            soundtrack.save()
+            return Response({"id": soundtrack.id, "title": soundtrack.title}, status=status.HTTP_200_OK)
+        except Soundtrack.DoesNotExist:
+            return Response({"error": "Soundtrack not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
 class SoundtrackCreateView(APIView):
     """
     View to handle the creation of soundtracks.
@@ -42,3 +62,20 @@ class SoundtrackCreateView(APIView):
             return Response({"id": soundtrack.id, "name": soundtrack.title}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class SoundtrackDeleteView(APIView):
+    """
+    View to handle the deletion of soundtracks.
+    """
+
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            soundtrack = Soundtrack.objects.get(pk=pk)
+            soundtrack.delete()
+            return Response({"message": "Soundtrack deleted successfully"}, status=status.HTTP_200_OK)
+        except Soundtrack.DoesNotExist:
+            return Response({"error": "Soundtrack not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
