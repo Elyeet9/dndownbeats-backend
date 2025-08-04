@@ -56,6 +56,18 @@ class CategoryDetailView(APIView):
         except Category.DoesNotExist:
             return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
         
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            category = Category.objects.get(pk=pk)
+            serializer = CategoryCreateSerializer(category, data=request.data)
+            if serializer.is_valid():
+                updated_category = serializer.save()
+                return Response({"id": updated_category.id, "name": updated_category.name}, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Category.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 
 class CategoryCreateView(APIView):
     """
@@ -69,3 +81,29 @@ class CategoryCreateView(APIView):
             return Response({"id": category.id, "name": category.name}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class CategoryDeleteView(APIView):
+    """
+    View to delete a category by ID.
+    """
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            category = Category.objects.get(pk=pk)
+            subcategories_count = category.subcategories.count()
+            soundtracks_count = category.soundtracks.count()
+            return Response({
+                'subcategories_count': subcategories_count,
+                'soundtracks_count': soundtracks_count,
+            }, status=status.HTTP_200_OK)
+        except Category.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            category = Category.objects.get(pk=pk)
+            category.delete()
+            return Response({"message": "Category deleted successfully"}, status=status.HTTP_200_OK)
+        except Category.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
