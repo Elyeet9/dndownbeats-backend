@@ -50,45 +50,38 @@ class SoundtrackCreateView(APIView):
         request_thumbnail = data.get('thumbnail', None)
 
         if request_url and not (request_title and request_thumbnail):
-            # Download the title and thumbnail from the URL using yt-dlp
+            # Download the title and thumbnail from the URL using BeautifulSoup
             try:
-                import yt_dlp
                 import requests
+                from bs4 import BeautifulSoup
                 from django.core.files.base import ContentFile
-                
-                # Configure yt-dlp options
-                ydl_opts = {
-                    'quiet': True,
-                    'no_warnings': True,
-                    'extract_flat': False,
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
                 }
-                
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    # Extract video info
-                    info = ydl.extract_info(request_url, download=False)
-                    
-                    # Get title if not provided
+                resp = requests.get(request_url, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, 'html.parser')
+                    # Get title
                     if not request_title:
-                        request_title = info.get('title', 'Unknown Title')
-                    
-                    # Get thumbnail if not provided
+                        title_tag = soup.find('meta', property='og:title')
+                        request_title = title_tag['content'] if title_tag else 'Unknown Title'
+                    # Get thumbnail
                     if not request_thumbnail:
-                        thumbnail_url = info.get('thumbnail')
+                        thumb_tag = soup.find('meta', property='og:image')
+                        thumbnail_url = thumb_tag['content'] if thumb_tag else None
                         if thumbnail_url:
-                            response = requests.get(thumbnail_url, timeout=10)
-                            if response.status_code == 200:
-                                # Clean the filename
+                            thumb_resp = requests.get(thumbnail_url, headers=headers, timeout=10)
+                            if thumb_resp.status_code == 200:
                                 safe_title = "".join(c for c in request_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-                                request_thumbnail = ContentFile(response.content, name=f"{safe_title[:50]}.jpg")
+                                request_thumbnail = ContentFile(thumb_resp.content, name=f"{safe_title[:50]}.jpg")
                             else:
-                                return Response({"error": "Failed to download thumbnail from video"}, status=status.HTTP_400_BAD_REQUEST)
+                                return Response({"error": "Failed to download thumbnail from video (fallback)"}, status=status.HTTP_400_BAD_REQUEST)
                         else:
-                            return Response({"error": "No thumbnail URL found for this video"}, status=status.HTTP_400_BAD_REQUEST)
-                        
-            except ImportError:
-                return Response({"error": "yt-dlp is not installed. Please install it with: pip install yt-dlp"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                            return Response({"error": "No thumbnail URL found for this video (fallback)"}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({"error": "Failed to fetch YouTube page (fallback)"}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                return Response({"error": f"Failed to fetch video data: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": f"yt-dlp and fallback both failed: {str(e)} | {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate required fields
         if not request_title:
@@ -125,4 +118,3 @@ class SoundtrackDeleteView(APIView):
             return Response({"error": "Soundtrack not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
